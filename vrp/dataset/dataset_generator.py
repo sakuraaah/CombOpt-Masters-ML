@@ -4,6 +4,7 @@ import sys
 if __package__ in (None, ""):
     sys.path.append(str(Path(__file__).resolve().parents[2]))
 
+from vrp.constants import DATASET_DIR, DATASET_NAME, SHARD_SIZE
 from vrp.utils.logger import create_logger
 from vrp.solver import PyVRPSolver
 from vrp.dataset.sample_builder import build_training_sample
@@ -11,16 +12,13 @@ from vrp.dataset.storage import TrainingDatasetStorage
 
 
 TARGET_SAMPLE_COUNT = 50000
-SHARD_SIZE = 100
-DATASET_NAME = "vrp_training_dataset_v3"
 
 
 def generate_dataset() -> None:
     logger = create_logger("train.generate_training_dataset")
-    dataset_dir = Path(__file__).resolve().parents[2] / "data" / DATASET_NAME
     solver = PyVRPSolver(display=False)
 
-    storage = TrainingDatasetStorage(dataset_dir=dataset_dir, shard_size=SHARD_SIZE)
+    storage = TrainingDatasetStorage(dataset_dir=DATASET_DIR)
     storage.initialize(
         {
             "dataset_name": DATASET_NAME,
@@ -36,7 +34,7 @@ def generate_dataset() -> None:
 
     logger.info(
         "Starting dataset generation in %s with %d/%d completed samples.",
-        dataset_dir,
+        DATASET_DIR,
         len(completed_sample_ids),
         TARGET_SAMPLE_COUNT,
     )

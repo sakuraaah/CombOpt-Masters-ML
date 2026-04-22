@@ -2,6 +2,7 @@ import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
+from vrp.constants import SHARD_SIZE
 from vrp.models.sample import Sample
 
 
@@ -13,12 +14,14 @@ class SampleIndexEntry:
 
 
 class TrainingDatasetStorage:
-    def __init__(self, dataset_dir: Path, shard_size: int) -> None:
+    def __init__(self, dataset_dir: Path) -> None:
         self.dataset_dir = dataset_dir
-        self.shard_size = shard_size
         self.shards_dir = dataset_dir / "shards"
         self.progress_path = dataset_dir / "progress.json"
         self.manifest_path = dataset_dir / "manifest.json"
+        self.shard_size = self.read_manifest_shard_size()
+        if self.shard_size is None:
+            self.shard_size = SHARD_SIZE
 
     def initialize(self, manifest: dict[str, object]) -> None:
         self.shards_dir.mkdir(parents=True, exist_ok=True)
@@ -28,6 +31,10 @@ class TrainingDatasetStorage:
                 json.dumps(manifest, indent=2),
                 encoding="utf-8",
             )
+
+        manifest_shard_size = manifest.get("shard_size")
+        if manifest_shard_size is not None:
+            self.shard_size = int(manifest_shard_size)
 
     def get_completed_sample_ids(self) -> set[int]:
         sample_ids: set[int] = set()
@@ -129,3 +136,14 @@ class TrainingDatasetStorage:
     def get_shard_path(self, sample_id: int) -> Path:
         shard_index = sample_id // self.shard_size
         return self.shards_dir / f"samples-{shard_index:05d}.jsonl"
+
+    def read_manifest_shard_size(self) -> int | None:
+        if not self.manifest_path.exists():
+            return None
+
+        manifest = json.loads(self.manifest_path.read_text(encoding="utf-8"))
+        shard_size = manifest.get("shard_size")
+        if shard_size is None:
+            return None
+
+        return int(shard_size)

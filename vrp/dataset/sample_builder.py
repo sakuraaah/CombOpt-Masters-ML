@@ -1,29 +1,11 @@
 import random
 
+from vrp.dataset.utils import get_max_runtime
 from vrp.models.sample import Sample
 from vrp.utils.instance_generator import generate_instance
 from vrp.parsers.instance import parse_instance_to_gnn_input
 from vrp.parsers.solution_result import parse_solution_result_to_gnn_output
 from vrp.solver import PyVRPSolver
-
-
-def get_max_runtime(problem_size: int) -> float:
-    min_problem_size = 10
-    max_problem_size = 100
-    min_runtime = 0.08
-    max_runtime = 2.5
-    growth_power = 3
-
-    clamped_problem_size = min(max(problem_size, min_problem_size), max_problem_size)
-    normalized_size = (
-        (clamped_problem_size - min_problem_size)
-        / (max_problem_size - min_problem_size)
-    )
-    scaled_runtime = min_runtime + (max_runtime - min_runtime) * (
-        normalized_size ** growth_power
-    )
-
-    return round(scaled_runtime, 2)
 
 
 def build_training_sample(sample_id: int, solver: PyVRPSolver) -> Sample:
@@ -34,7 +16,11 @@ def build_training_sample(sample_id: int, solver: PyVRPSolver) -> Sample:
     solution_result = solver.solve_instance(instance, max_runtime=max_runtime)
 
     gnn_input = parse_instance_to_gnn_input(instance)
-    gnn_output = parse_solution_result_to_gnn_output(solution_result)
+    gnn_output = parse_solution_result_to_gnn_output(
+        instance,
+        gnn_input,
+        solution_result,
+    )
 
     return Sample(
         sample_id=sample_id,

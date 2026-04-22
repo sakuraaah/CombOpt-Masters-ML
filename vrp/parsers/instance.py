@@ -1,5 +1,6 @@
 from pyvrp import Model
 
+from vrp.constants import GRAPH_K
 from vrp.models.gnn_input import GNNInput
 from vrp.models.instance import Instance
 
@@ -38,8 +39,6 @@ def parse_instance_to_gnn_input(instance: Instance) -> GNNInput:
     coordinate_scale = max_coordinate if max_coordinate > 0 else 1.0
 
     node_features: list[list[float]] = []
-    edge_index: list[list[int]] = [[], []]
-    edge_features: list[list[float]] = []
 
     for node in instance.nodes:
         node_features.append(
@@ -51,11 +50,15 @@ def parse_instance_to_gnn_input(instance: Instance) -> GNNInput:
             ]
         )
 
-    for from_idx in range(instance.get_node_count()):
-        for to_idx in range(instance.get_node_count()):
-            edge_index[0].append(from_idx)
-            edge_index[1].append(to_idx)
-            edge_features.append([instance.distance_matrix[from_idx][to_idx]])
+    edge_pairs = get_trimmed_edge_pairs(instance)
+    edge_index: list[list[int]] = [
+        [from_idx for from_idx, _ in edge_pairs],
+        [to_idx for _, to_idx in edge_pairs],
+    ]
+    edge_features = [
+        [instance.distance_matrix[from_idx][to_idx]]
+        for from_idx, to_idx in edge_pairs
+    ]
 
     return GNNInput(
         node_features=node_features,
@@ -66,3 +69,44 @@ def parse_instance_to_gnn_input(instance: Instance) -> GNNInput:
 
 def get_max_coordinate(instance: Instance) -> float:
     return max(max(node["x"], node["y"]) for node in instance.nodes)
+
+
+def get_trimmed_edge_pairs(instance: Instance) -> list[tuple[int, int]]:
+    node_count = instance.get_node_count()
+
+    if node_count <= 1:
+        return []
+
+    k_neighbors = min(GRAPH_K, node_count - 1)
+    depot_indices = {
+        node_idx
+        for node_idx, node in enumerate(instance.nodes)
+        if node["type"] == "depot"
+    }
+    edge_pairs: set[tuple[int, int]] = set()
+
+    for from_idx in range(node_count):
+        if from_idx in depot_indices:
+            for to_idx in range(node_count):
+                if to_idx != from_idx:
+                    edge_pairs.add((from_idx, to_idx))
+                    edge_pairs.add((to_idx, from_idx))
+            continue
+
+        nearest_targets = sorted(
+            (
+                (instance.distance_matrix[from_idx][to_idx], to_idx)
+                for to_idx in range(node_count)
+                if to_idx != from_idx
+            ),
+            key=lambda item: item[0],
+        )
+
+        for _, to_idx in nearest_targets[:k_neighbors]:
+            edge_pairs.add((from_idx, to_idx))
+
+        for depot_idx in depot_indices:
+            edge_pairs.add((from_idx, depot_idx))
+            edge_pairs.add((depot_idx, from_idx))
+
+    return sorted(edge_pairs)

@@ -1,15 +1,14 @@
 import os
 from datetime import datetime
-from pathlib import Path
 
 import matplotlib.pyplot as plt
 
+from vrp.constants import PLOT_OUTPUT_DIR
 from vrp.models.gnn_input import GNNInput
 from vrp.models.gnn_output import GNNOutput
 
 
 SHOW_BLOCKING = False
-PLOT_OUTPUT_DIR = Path(__file__).resolve().parents[2] / "outputs" / "plots"
 
 
 def plot_graph_pair(
