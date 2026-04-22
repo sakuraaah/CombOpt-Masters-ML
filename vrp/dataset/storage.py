@@ -1,9 +1,15 @@
-from __future__ import annotations
-
 import json
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from vrp.models.sample import Sample
+
+
+@dataclass
+class SampleIndexEntry:
+    path: str
+    offset: int
+    sample_id: int
 
 
 class TrainingDatasetStorage:
@@ -61,6 +67,50 @@ class TrainingDatasetStorage:
                     return Sample.from_dict(record)
 
         raise ValueError(f"Sample with sample_id={sample_id} was not found")
+
+    def build_or_load_index(self) -> list[SampleIndexEntry]:
+        index_path = self.dataset_dir / "index_offsets.json"
+
+        if index_path.exists():
+            payload = json.loads(index_path.read_text(encoding="utf-8"))
+            return [SampleIndexEntry(**item) for item in payload]
+
+        entries: list[SampleIndexEntry] = []
+
+        if not self.shards_dir.exists():
+            return entries
+
+        for shard_path in sorted(self.shards_dir.glob("samples-*.jsonl")):
+            with shard_path.open("rb") as shard_file:
+                while True:
+                    offset = shard_file.tell()
+                    line = shard_file.readline()
+                    if not line:
+                        break
+                    if not line.strip():
+                        continue
+
+                    record = json.loads(line)
+                    entries.append(
+                        SampleIndexEntry(
+                            path=str(shard_path),
+                            offset=offset,
+                            sample_id=int(record["sample_id"]),
+                        )
+                    )
+
+        index_path.write_text(
+            json.dumps([asdict(entry) for entry in entries], indent=2),
+            encoding="utf-8",
+        )
+        return entries
+
+    def read_indexed_record(self, entry: SampleIndexEntry) -> dict[str, object]:
+        with Path(entry.path).open("rb") as shard_file:
+            shard_file.seek(entry.offset)
+            line = shard_file.readline()
+
+        return json.loads(line)
 
     def write_progress(self, target_sample_count: int, completed_sample_ids: set[int]) -> None:
         progress = {
