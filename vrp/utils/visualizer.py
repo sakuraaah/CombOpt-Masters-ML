@@ -1,4 +1,6 @@
-from __future__ import annotations
+import os
+from datetime import datetime
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 
@@ -6,7 +8,15 @@ from vrp.models.gnn_input import GNNInput
 from vrp.models.gnn_output import GNNOutput
 
 
-def plot_graph_pair(graph_input: GNNInput, graph_output: GNNOutput) -> None:
+SHOW_BLOCKING = False
+PLOT_OUTPUT_DIR = Path(__file__).resolve().parents[2] / "outputs" / "plots"
+
+
+def plot_graph_pair(
+    graph_input: GNNInput,
+    graph_output: GNNOutput,
+    file_name_prefix: str = "plot",
+) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(14, 6), sharex=True, sharey=True)
     input_ax, output_ax = axes
 
@@ -17,7 +27,7 @@ def plot_graph_pair(graph_input: GNNInput, graph_output: GNNOutput) -> None:
     draw_graph_output(output_ax, graph_input, graph_output)
     output_ax.set_title("Graph output")
 
-    finalize_plot(fig)
+    finalize_plot(fig, file_name_prefix)
 
 
 def draw_graph_input(ax: plt.Axes, graph_input: GNNInput) -> None:
@@ -71,13 +81,11 @@ def draw_graph_output(
     graph_input: GNNInput,
     graph_output: GNNOutput,
 ) -> None:
-    active_edges: list[tuple[int, int]] = []
-
     for edge_idx, (from_idx, to_idx) in enumerate(graph_input.get_edge_pairs()):
-        if graph_output.edge_scores[edge_idx] > 0.5:
-            active_edges.append((from_idx, to_idx))
+        opacity = max(0.0, min(1.0, float(graph_output.edge_scores[edge_idx])))
+        if opacity == 0.0:
+            continue
 
-    for from_idx, to_idx in active_edges:
         from_x, from_y = graph_input.get_coordinates(from_idx)
         to_x, to_y = graph_input.get_coordinates(to_idx)
         ax.plot(
@@ -85,7 +93,7 @@ def draw_graph_output(
             [from_y, to_y],
             color="#000000",
             linewidth=2,
-            alpha=0.85,
+            alpha=opacity,
         )
 
 
@@ -100,6 +108,15 @@ def annotate_node(ax: plt.Axes, graph_input: GNNInput, node_idx: int) -> None:
     )
 
 
-def finalize_plot(fig: plt.Figure) -> None:
+def finalize_plot(fig: plt.Figure, file_name_prefix: str) -> None:
     fig.tight_layout()
-    plt.show()
+    if SHOW_BLOCKING:
+        plt.show()
+        return
+
+    PLOT_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+    plot_path = PLOT_OUTPUT_DIR / f"{file_name_prefix}_{timestamp}.png"
+    fig.savefig(plot_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    os.startfile(plot_path)
