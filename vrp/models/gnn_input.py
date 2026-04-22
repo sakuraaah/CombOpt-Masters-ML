@@ -1,6 +1,3 @@
-from __future__ import annotations
-
-
 NodeFeatures = list[list[float]]
 EdgeIndex = list[list[int]]
 EdgeFeatures = list[list[float]]

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from pyvrp.stop import MaxRuntime
 
 from vrp.models.instance import Instance

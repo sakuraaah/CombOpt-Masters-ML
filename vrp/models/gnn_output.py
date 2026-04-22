@@ -1,6 +1,3 @@
-from __future__ import annotations
-
-
 class GNNOutput:
     def __init__(self, edge_scores: list[float]) -> None:
         self.edge_scores = edge_scores

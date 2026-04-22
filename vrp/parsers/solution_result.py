@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from vrp.models.gnn_output import GNNOutput
 from vrp.models.solution import SolutionResult
 

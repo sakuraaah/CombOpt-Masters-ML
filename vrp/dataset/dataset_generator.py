@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from pathlib import Path
 import sys
 
@@ -12,14 +10,14 @@ from vrp.dataset.sample_builder import build_training_sample
 from vrp.dataset.storage import TrainingDatasetStorage
 
 
-TARGET_SAMPLE_COUNT = 200
+TARGET_SAMPLE_COUNT = 50000
 SHARD_SIZE = 100
-DATASET_NAME = "vrp_training_dataset_v2"
+DATASET_NAME = "vrp_training_dataset_v3"
 
 
 def generate_dataset() -> None:
     logger = create_logger("train.generate_training_dataset")
-    dataset_dir = Path(__file__).resolve().parent / "data" / DATASET_NAME
+    dataset_dir = Path(__file__).resolve().parents[2] / "data" / DATASET_NAME
     solver = PyVRPSolver(display=False)
 
     storage = TrainingDatasetStorage(dataset_dir=dataset_dir, shard_size=SHARD_SIZE)

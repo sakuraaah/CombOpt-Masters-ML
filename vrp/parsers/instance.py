@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from pyvrp import Model
 
 from vrp.models.gnn_input import GNNInput

@@ -1,4 +1,6 @@
 .vscode
 __pycache__
 
-vrp/dataset/data
+data
+outputs
+runs
