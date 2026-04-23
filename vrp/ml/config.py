@@ -11,7 +11,6 @@ from vrp.ml.constants import (
     LR_PATIENCE,
     NUM_LAYERS,
     NUM_WORKERS,
-    POS_WEIGHT_CAP,
     WEIGHT_DECAY,
 )
 
@@ -29,4 +28,3 @@ class TrainConfig:
     epochs: int = EPOCHS
     lr_patience: int = LR_PATIENCE
     early_stopping_patience: int = EARLY_STOPPING_PATIENCE
-    pos_weight_cap: float = POS_WEIGHT_CAP

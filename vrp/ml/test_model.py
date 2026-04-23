@@ -33,11 +33,7 @@ def test_model() -> dict[str, float]:
         persistent_workers=config.num_workers > 0,
     )
 
-    pos_weight_value = estimate_pos_weight(
-        dataset,
-        max_samples=None,
-        cap=config.pos_weight_cap,
-    )
+    pos_weight_value = estimate_pos_weight(dataset)
     pos_weight = torch.tensor([pos_weight_value], dtype=torch.float32, device=device)
     criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
 

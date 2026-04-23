@@ -88,11 +88,7 @@ def train_model() -> None:
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    pos_weight_value = estimate_pos_weight(
-        train_set,
-        max_samples=None,
-        cap=config.pos_weight_cap,
-    )
+    pos_weight_value = estimate_pos_weight(train_set)
     pos_weight = torch.tensor([pos_weight_value], dtype=torch.float32, device=device)
     criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
 
