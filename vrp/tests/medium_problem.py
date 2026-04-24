@@ -4,6 +4,7 @@ import sys
 if __package__ in (None, ""):
     sys.path.append(str(Path(__file__).resolve().parents[2]))
 
+from vrp.dataset.utils import get_max_runtime
 from vrp.utils.instance_generator import generate_instance
 from vrp.parsers.instance import parse_instance_to_gnn_input
 from vrp.parsers.solution_result import parse_solution_result_to_gnn_output
@@ -11,9 +12,9 @@ from vrp.solver import PyVRPSolver
 from vrp.utils.visualizer import plot_graph_pair
 
 
-SEED = 1000
+SEED = 3662
 PROBLEM_SIZE = 50
-MAX_RUNTIME = 0.1
+MAX_RUNTIME = get_max_runtime(PROBLEM_SIZE)
 
 
 if __name__ == "__main__":
