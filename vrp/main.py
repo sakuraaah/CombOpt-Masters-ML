@@ -17,5 +17,9 @@ if __name__ == "__main__":
     solution_result = solver.solve_instance(instance)
 
     graph_input = parse_instance_to_gnn_input(instance)
-    graph_output = parse_solution_result_to_gnn_output(solution_result)
+    graph_output = parse_solution_result_to_gnn_output(
+        instance,
+        graph_input,
+        solution_result,
+    )
     plot_graph_pair(graph_input, graph_output)
