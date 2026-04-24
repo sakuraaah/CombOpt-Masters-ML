@@ -1,5 +1,15 @@
+# NodeFeatures: [
+#   normalized x (x / max_coordinate),
+#   normalized y (y / max_coordinate),
+#   is_depot (0 or 1),
+#   courier_id (or -1 for clients),
+# ]
 NodeFeatures = list[list[float]]
+
+# EdgeIndex: [[from_node_indices], [to_node_indices]]
 EdgeIndex = list[list[int]]
+
+# EdgeFeatures: [distance]
 EdgeFeatures = list[list[float]]
 
 
