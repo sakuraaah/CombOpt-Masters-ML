@@ -69,6 +69,10 @@ def train_model() -> None:
         lr=config.lr,
         weight_decay=config.weight_decay,
     )
+
+    train_log_every = max(1, len(train_loader) // 10) if len(train_loader) > 0 else 1
+    val_log_every = max(1, len(val_loader) // 4) if len(val_loader) > 0 else 1
+
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer,
         mode="max",
@@ -112,12 +116,20 @@ def train_model() -> None:
                 criterion=criterion,
                 device=device,
                 optimizer=optimizer,
+                logger=logger,
+                epoch=epoch,
+                phase_name="train",
+                log_every=train_log_every,
             )
             val_metrics = run_epoch(
                 model=model,
                 loader=val_loader,
                 criterion=criterion,
                 device=device,
+                logger=logger,
+                epoch=epoch,
+                phase_name="val",
+                log_every=val_log_every,
             )
 
             scheduler.step(val_metrics["ap"])

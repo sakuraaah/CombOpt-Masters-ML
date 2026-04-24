@@ -34,6 +34,10 @@ def run_epoch(
     criterion: nn.Module,
     device: torch.device,
     optimizer: torch.optim.Optimizer | None = None,
+    logger: logging.Logger | None = None,
+    epoch: int | None = None,
+    phase_name: str | None = None,
+    log_every: int | None = None,
 ) -> dict[str, float]:
     is_train = optimizer is not None
 
@@ -43,6 +47,18 @@ def run_epoch(
     all_targets: list[torch.Tensor] = []
     running_loss = 0.0
     batch_count = 0
+    total_batches = len(loader)
+    phase_label = phase_name or ("train" if is_train else "eval")
+    started_at = time.perf_counter()
+
+    if logger is not None:
+        epoch_label = f"{epoch:03d}" if epoch is not None else "???"
+        logger.info(
+            "[epoch %s] starting %s pass (%d batches)",
+            epoch_label,
+            phase_label,
+            total_batches,
+        )
 
     for batch_idx, batch in enumerate(loader, start=1):
         batch = batch.to(device)
@@ -61,6 +77,25 @@ def run_epoch(
         all_targets.append(target.detach().cpu())
         running_loss += loss_value
         batch_count = batch_idx
+
+        if (
+            logger is not None
+            and total_batches > 0
+            and log_every is not None
+            and log_every > 0
+            and (batch_idx % log_every == 0 or batch_idx == total_batches)
+        ):
+            elapsed = time.perf_counter() - started_at
+            logger.info(
+                "[epoch %s] %s %d/%d (%.1f%%) avg_loss=%.4f elapsed=%.1fs",
+                f"{epoch:03d}" if epoch is not None else "???",
+                phase_label,
+                batch_idx,
+                total_batches,
+                100.0 * batch_idx / total_batches,
+                running_loss / batch_idx,
+                elapsed,
+            )
 
     logits = torch.cat(all_logits, dim=0)
     target = torch.cat(all_targets, dim=0)
