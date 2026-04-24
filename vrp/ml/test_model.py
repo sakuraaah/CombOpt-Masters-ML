@@ -10,8 +10,7 @@ from torch_geometric.loader import DataLoader
 
 from vrp.constants import DATASET_DIR, OUTPUT_DIR
 from vrp.ml.storage import MLTrainingStorage
-from vrp.ml.train_model import run_epoch
-from vrp.ml.utils import estimate_pos_weight
+from vrp.ml.utils import estimate_pos_weight, run_epoch
 from vrp.models.ml_dataset import MLDataset
 from vrp.utils.logger import create_logger
 

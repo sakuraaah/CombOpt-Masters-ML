@@ -13,46 +13,9 @@ from vrp.ml.config import TrainConfig
 from vrp.ml.ml import VRPAnalysisModel
 from vrp.ml.storage import MLTrainingStorage
 from vrp.ml.test_model import test_model
-from vrp.ml.utils import estimate_pos_weight, summarize_epoch_metrics
+from vrp.ml.utils import estimate_pos_weight, run_epoch
 from vrp.models.ml_dataset import MLDataset
 from vrp.utils.logger import create_logger
-
-
-def run_epoch(
-    model: nn.Module,
-    loader: DataLoader,
-    criterion: nn.Module,
-    device: torch.device,
-    optimizer: torch.optim.Optimizer | None = None,
-) -> dict[str, float]:
-    is_train = optimizer is not None
-    model.train(is_train)
-
-    total_loss = 0.0
-    total_edges = 0
-    all_logits: list[torch.Tensor] = []
-    all_targets: list[torch.Tensor] = []
-
-    for batch in loader:
-        batch = batch.to(device)
-        logits = model(batch)
-        target = batch.y.float()
-        loss = criterion(logits, target)
-
-        if is_train:
-            optimizer.zero_grad(set_to_none=True)
-            loss.backward()
-            nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
-            optimizer.step()
-
-        total_loss += float(loss.item()) * target.numel()
-        total_edges += int(target.numel())
-        all_logits.append(logits.detach().cpu())
-        all_targets.append(target.detach().cpu())
-
-    logits = torch.cat(all_logits, dim=0)
-    target = torch.cat(all_targets, dim=0)
-    return summarize_epoch_metrics(logits, target, total_loss, total_edges)
 
 
 def train_model() -> None:
@@ -100,6 +63,7 @@ def train_model() -> None:
         heads=config.heads,
         dropout=config.dropout,
     ).to(device)
+
     optimizer = torch.optim.Adam(
         model.parameters(),
         lr=config.lr,
@@ -113,6 +77,7 @@ def train_model() -> None:
     )
 
     resume_state = storage.load_resume_state(device)
+
     if resume_state is not None:
         model.load_state_dict(resume_state["model_state_dict"])
         optimizer.load_state_dict(resume_state["optimizer_state_dict"])
@@ -128,10 +93,19 @@ def train_model() -> None:
         history = []
         start_epoch = 1
 
+    logger.info(
+        "Training setup: device=%s train_batches=%d val_batches=%d batch_size=%d",
+        device,
+        len(train_loader),
+        len(val_loader),
+        config.batch_size,
+    )
+
     last_completed_epoch = start_epoch - 1
 
     try:
         for epoch in range(start_epoch, config.epochs + 1):
+            logger.info("[epoch %03d/%03d] started", epoch, config.epochs)
             train_metrics = run_epoch(
                 model=model,
                 loader=train_loader,
@@ -190,10 +164,12 @@ def train_model() -> None:
             if stale_epochs >= config.early_stopping_patience:
                 logger.info("Early stopping triggered.")
                 break
+
     except KeyboardInterrupt:
         logger.info(
             "Training interrupted. Progress saved at epoch %d.", last_completed_epoch
         )
+
         if last_completed_epoch > 0:
             storage.save_training_state(
                 model=model,
@@ -208,6 +184,7 @@ def train_model() -> None:
                 edge_dim=edge_dim,
                 is_best=False,
             )
+
         return
 
     logger.info("Best validation AP: %.4f", best_val_ap)
