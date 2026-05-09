@@ -5,8 +5,8 @@ VRP problem instance (edges reduced to k-nearest) is passed to the ML, which ret
 - 1: edge is optimal;
 
 Domain: VRP with multiple couriers
-- List<Courier>: each courier has depot + own route with clients;
-- List<Client>: each client must be visited + has own location in (x, y) format
+- List(Courier): each courier has depot + own route with clients;
+- List(Client): each client must be visited + has own location in (x, y) format
 
 built on Python/PyTorch/PyVRP
 
